@@ -1,8 +1,8 @@
-# Makefile for Project 1 of CS 118
+# Makefile for the Stampede web server
 # Ky-Cuong L. Huynh
 # 22 January 2016
 
-NAME = Thunder
+NAME = Stampede
 CC = gcc
 FLAGS = -std=c99 -Wall -Wextra
 
