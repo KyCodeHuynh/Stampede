@@ -3,17 +3,20 @@
 # 22 January 2016
 
 NAME = Stampede
+TEST_NAME = Client-Stampede
 CC = gcc
 FLAGS = -std=c99 -Wall -Wextra
 
 SRC = server.c 
-TESTSRC = $(SRC) client.c
+TESTSRC = client.c
 
-all:
+all: server test
+	
+server:
 	$(CC) $(FLAGS) -o $(NAME) $(SRC)
 
 test:
-	$(CC) $(FLAGS) -o $(NAME) $(TESTSRC)
+	$(CC) $(FLAGS) -o $(TEST_NAME) $(TESTSRC)
 
 clean:
-	rm -rf *.o a.out $(NAME)
+	rm -rf *.o a.out $(NAME) $(TEST_NAME)

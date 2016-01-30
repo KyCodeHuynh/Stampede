@@ -1,4 +1,3 @@
-
 /*
  A simple client in the internet domain using TCP
  Usage: ./client hostname port (./client 192.168.0.151 10000)
