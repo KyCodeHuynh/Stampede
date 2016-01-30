@@ -56,17 +56,33 @@ int main(int argc, char *argv[])
    			 
    	 memset(buffer, 0, 256);	//reset memory
       
- 		 //read client's message
+ 		 // To read the client's request: 
+     //
+     // Will need to tokenize, validate, and parse
+
+     // To construct a response: 
+     //
+     // Could just read first line of request: 
+     //   GET /image.png HTTP/1.1
+     // And return the correct resource. 
+     //
+     // Could just attempt to locate resource with 
+     // an fstat() etc., and return 404 if needed. 
+     // But use send() instead of write() or fwrite()
+     //
+     // NOTE: Handling of nullbytes in files? write() 
+     // is by default delimited by nullbytes. 
    	 n = read(newsockfd,buffer,255);
    	 if (n < 0) error("ERROR reading from socket");
    	 printf("Here is the message: %s\n",buffer);
    	 
-   	 //reply to client
+   	 // reply to client
+     // Use send() instead
    	 n = write(newsockfd,"I got your message",18);
    	 if (n < 0) error("ERROR writing to socket");
          
      
-     close(newsockfd);//close connection 
+     close(newsockfd); //close connection 
      close(sockfd);
          
      return 0; 
