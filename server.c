@@ -2,7 +2,7 @@
    The port number is passed as an argument 
    This version runs forever, forking off a separate 
    process for each connection
-*/
+   */
 #include <stdio.h>
 #include <sys/types.h>   // definitions of a number of data types used in socket.h and netinet/in.h
 #include <sys/socket.h>  // definitions of structures needed for sockets, e.g. sockaddr
@@ -21,70 +21,88 @@ void error(char *msg)
 
 int main(int argc, char *argv[])
 {
-     int sockfd, newsockfd, portno, pid;
-     socklen_t clilen;
-     struct sockaddr_in serv_addr, cli_addr;
+    int sockfd;
+    int newsockfd;
+    int portno;
+    int pid;
+    socklen_t clilen;
+    struct sockaddr_in serv_addr;
+    struct sockaddr_in cli_addr;
 
-     if (argc < 2) {
-         fprintf(stderr,"ERROR, no port provided\n");
-         exit(1);
-     }
-     sockfd = socket(AF_INET, SOCK_STREAM, 0);	//create socket
-     if (sockfd < 0) 
+    if (argc < 2) {
+        fprintf(stderr,"ERROR, no port provided\n");
+        exit(1);
+    }
+
+    // create socket
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);	
+    if (sockfd < 0) {
         error("ERROR opening socket");
-     memset((char *) &serv_addr, 0, sizeof(serv_addr));	//reset memory
-     //fill in address info
-     portno = atoi(argv[1]);
-     serv_addr.sin_family = AF_INET;
-     serv_addr.sin_addr.s_addr = INADDR_ANY;
-     serv_addr.sin_port = htons(portno);
-     
-     if (bind(sockfd, (struct sockaddr *) &serv_addr,
-              sizeof(serv_addr)) < 0) 
-              error("ERROR on binding");
-     
-     listen(sockfd,5);	//5 simultaneous connection at most
-     
-     //accept connections
-     newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-         
-     if (newsockfd < 0) 
-       error("ERROR on accept");
-         
-     int n;
-   	 char buffer[256];
-   			 
-   	 memset(buffer, 0, 256);	//reset memory
-      
- 		 // To read the client's request: 
-     //
-     // Will need to tokenize, validate, and parse
+    }
 
-     // To construct a response: 
-     //
-     // Could just read first line of request: 
-     //   GET /image.png HTTP/1.1
-     // And return the correct resource. 
-     //
-     // Could just attempt to locate resource with 
-     // an fstat() etc., and return 404 if needed. 
-     // But use send() instead of write() or fwrite()
-     //
-     // NOTE: Handling of nullbytes in files? write() 
-     // is by default delimited by nullbytes. 
-   	 n = read(newsockfd,buffer,255);
-   	 if (n < 0) error("ERROR reading from socket");
-   	 printf("Here is the message: %s\n",buffer);
-   	 
-   	 // reply to client
-     // Use send() instead
-   	 n = write(newsockfd,"I got your message",18);
-   	 if (n < 0) error("ERROR writing to socket");
-         
-     
-     close(newsockfd); //close connection 
-     close(sockfd);
-         
-     return 0; 
+    // reset memory
+    memset((char *) &serv_addr, 0, sizeof(serv_addr));	
+
+    // fill in address info
+    portno = atoi(argv[1]);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(portno);
+
+    if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        error("ERROR on binding");
+    }
+
+    listen(sockfd,5);	//5 simultaneous connection at most
+
+    //accept connections
+    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+
+    if (newsockfd < 0) {
+        error("ERROR on accept");
+    }
+
+    int n;
+    char buffer[256];
+
+    memset(buffer, 0, 256);	//reset memory
+
+    // To read the client's request: 
+    //
+    // Will need to tokenize, validate, and parse
+
+    // To construct a response: 
+    //
+    // Could just read first line of request: 
+    //   GET /image.png HTTP/1.1
+    // And return the correct resource. 
+    //
+    // Need to fork() in order for suspension while waiting
+    //
+    // Could just attempt to locate resource with 
+    // an fstat() etc., and return 404 if needed. 
+    // But use send() instead of write() or fwrite()
+    //
+    // NOTE: Handling of nullbytes in files? write() 
+    // is by default delimited by nullbytes. 
+    n = read(newsockfd,buffer,255);
+    if (n < 0) {
+        error("ERROR reading from socket");
+    }
+
+    printf("Here is the message: %s\n",buffer);
+
+    // reply to client
+    // Use send() instead
+    n = write(newsockfd,"I got your message",18);
+    if (n < 0) {
+        error("ERROR writing to socket");
+    }
+
+
+    close(newsockfd); //close connection 
+    close(sockfd);
+
+    return 0; 
 }
 
