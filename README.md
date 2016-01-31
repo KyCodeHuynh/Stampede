@@ -1,3 +1,5 @@
 # Stampede
+Ky-Cuong L. Huynh
+ID# 204269084
 
-A simple concurrent web server
+A concurrent, connection-oriented web server.

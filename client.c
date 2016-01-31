@@ -2,18 +2,19 @@
  A simple client in the internet domain using TCP
  Usage: ./client hostname port (./client 192.168.0.151 10000)
  */
-#include <stdio.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>      // define structures like hostent
+#include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 
 void error(char *msg)
 {
     perror(msg);
-    exit(0);
+    exit(1);
 }
 
 int main(int argc, char *argv[])
@@ -28,7 +29,7 @@ int main(int argc, char *argv[])
 
     char buffer[256];
     if (argc < 3) {
-       fprintf(stderr, "usage %s hostname port\n", argv[0]);
+       fprintf(stderr, "Usage: %s hostname port\n", argv[0]);
        exit(0);
     }
     
