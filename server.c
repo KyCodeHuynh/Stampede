@@ -36,8 +36,7 @@ int main(int argc, char *argv[])
     // Create socket
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);	
     if (sockfd < 0) {
-        perror("ERROR: opening socket");
-        exit(1);
+        error("ERROR: opening socket");
     }
 
     // Always initialize to 0 bytes to avoid junk data
@@ -46,7 +45,10 @@ int main(int argc, char *argv[])
 
     // Sanity checks on port number
     int portNum = atoi(argv[1]);
-    if (portNum < 0 || portNum)
+
+    if (portNum < 0 || portNum < UINT16_MAX ) {
+        error("ERROR: invalid port number (allowable range is 0-65535)");
+    }
 
     // Fill in address info
     serverAddress.sin_family = AF_INET;
@@ -90,7 +92,7 @@ int main(int argc, char *argv[])
     // is by default delimited by nullbytes. 
     char buffer[256];
     memset(buffer, 0, 256); 
-    
+
     int n = read(newsockfd, buffer, 255);
     if (n < 0) {
         error("ERROR: reading from socket");
