@@ -7,7 +7,7 @@ TEST_NAME = Client-Stampede
 CC = gcc
 FLAGS = -std=c99 -Wall -Wextra
 
-SRC = server.c 
+SRC = server.c simple_http.c utility.c
 TESTSRC = client.c
 
 all: server test
