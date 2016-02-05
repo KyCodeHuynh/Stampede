@@ -1,6 +1,8 @@
 #include "simple_http.h"
-#include <string.h>
+
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 // TODO: Test this separately in a simple_http_test.c
 // See Section 2.2 of Computer Networking (Kurose and Ross, 6th Edition)
@@ -15,19 +17,23 @@ int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath)
     char* curLine = strtok(requestBuffer, "\r\n");
     for (;;) {
         // End of request
+        fprintf(stderr, "DEBUG: Current line: %s [Line %d]\n", curLine, __LINE__);
         if (curLine == NULL) {
+            fprintf(stderr, "DEBUG: Breaking out of of parsing outer loop [Line %d]\n", __LINE__);
             break;
         }
         else {
-            char* curWord;
+            char* curWord = strtok(curLine, " ");
             for (;;) {
-                curWord = strtok(curLine, " ");
+                fprintf(stderr, "DEBUG: Current word: %s [Line %d]\n", curWord, __LINE__);
                 if (curWord == NULL) {
+                    fprintf(stderr, "DEBUG: Breaking out of parsing inner loop [Line %d]\n", __LINE__);
                     break;
                 }
 
                 if (isFirstLine) {
                     if (strcmp(curWord, "GET") == 0) {
+                        fprintf(stderr, "DEBUG: Got a GET request [Line %d]\n", __LINE__);
                         *verb = HTTP_GET;
                     }
                     // TODO: No other verbs are supported at present
@@ -37,13 +43,16 @@ int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath)
 
                     // Second token should be /path/to/resource, 
                     // so we need to strip the leading slash,
-                    // for which we can just increment the pointer
-                    curWord = strtok(curLine, " ");
+                    // for which we can just increment the pointer.
+                    // strtok() expects a NULL upon subsequent calls
+                    // to advance forward internally to the next token.
+                    curWord = strtok(NULL, " ");
                     // Pointer-to-pointer so that it is modifiable
                     // despite being passed into a function
                     *resourcePath = curWord + 1;
 
                     isFirstLine = false;
+                    break;
                 }
                 // The rest is header parsing
                 // Request won't have a body
@@ -53,7 +62,7 @@ int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath)
         }
         // Placement of this matters, or else
         // we'd proceed to the next line too soon.
-        curLine = strtok(requestBuffer, "\r\n");
+        curLine = strtok(NULL, "\r\n");
     } 
 
     return 0;
