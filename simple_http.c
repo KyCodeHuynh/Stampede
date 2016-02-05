@@ -15,55 +15,42 @@ int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath)
     // Tokenize the request by lines, then by words within lines.
     // We fill curLinen right away to avoid prematurely tripping the NULL check
     char* curLine = strtok(requestBuffer, "\r\n");
+    char* curWord = strtok(curLine, " ");
     for (;;) {
-        // End of request
-        fprintf(stderr, "DEBUG: Current line: %s [Line %d]\n", curLine, __LINE__);
-        if (curLine == NULL) {
-            fprintf(stderr, "DEBUG: Breaking out of of parsing outer loop [Line %d]\n", __LINE__);
+        // fprintf(stderr, "DEBUG: Current word: %s [Line %d]\n", curWord, __LINE__);
+        if (curWord == NULL) {
+            // fprintf(stderr, "DEBUG: Breaking out of parsing inner loop [Line %d]\n", __LINE__);
             break;
         }
-        else {
-            char* curWord = strtok(curLine, " ");
-            for (;;) {
-                fprintf(stderr, "DEBUG: Current word: %s [Line %d]\n", curWord, __LINE__);
-                if (curWord == NULL) {
-                    fprintf(stderr, "DEBUG: Breaking out of parsing inner loop [Line %d]\n", __LINE__);
-                    break;
-                }
 
-                if (isFirstLine) {
-                    if (strcmp(curWord, "GET") == 0) {
-                        fprintf(stderr, "DEBUG: Got a GET request [Line %d]\n", __LINE__);
-                        *verb = HTTP_GET;
-                    }
-                    // TODO: No other verbs are supported at present
-                    else {
-                        return -1;
-                    }
-
-                    // Second token should be /path/to/resource, 
-                    // so we need to strip the leading slash,
-                    // for which we can just increment the pointer.
-                    // strtok() expects a NULL upon subsequent calls
-                    // to advance forward internally to the next token.
-                    curWord = strtok(NULL, " ");
-                    // Pointer-to-pointer so that it is modifiable
-                    // despite being passed into a function
-                    *resourcePath = curWord + 1;
-
-                    isFirstLine = false;
-                    break;
-                }
-                // The rest is header parsing
-                // Request won't have a body
-                // TODO: Handle headers
-                // TODO: Basic HTTP format validation 
+        if (isFirstLine) {
+            if (strcmp(curWord, "GET") == 0) {
+                // fprintf(stderr, "DEBUG: Got a GET request [Line %d]\n", __LINE__);
+                *verb = HTTP_GET;
             }
+            // TODO: No other verbs are supported at present
+            else {
+                return -1;
+            }
+
+            // Second token should be /path/to/resource, 
+            // so we need to strip the leading slash,
+            // for which we can just increment the pointer.
+            // strtok() expects a NULL upon subsequent calls
+            // to advance forward internally to the next token.
+            curWord = strtok(NULL, " ");
+            // Pointer-to-pointer so that it is modifiable
+            // despite being passed into a function
+            *resourcePath = curWord + 1;
+
+            isFirstLine = false;
+            break;
         }
-        // Placement of this matters, or else
-        // we'd proceed to the next line too soon.
-        curLine = strtok(NULL, "\r\n");
-    } 
+        // The rest is header parsing
+        // Request won't have a body
+        // TODO: Handle headers. Would need outer loop for multiple lines.
+        // TODO: Basic HTTP format validation 
+    }
 
     return 0;
 }

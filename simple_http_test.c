@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 // Uncomment this to disable all assertions
 // #define NDEBUG
@@ -22,6 +23,8 @@ int main()
     char* resourcePath = (char*)malloc(sizeof(char) * MAX_FILE_PATH_LENGTH);
 
     assert(0 == parse_request(testBuffer, &verbResult, &resourcePath));
+    assert(verbResult == HTTP_GET);
+    assert(strcmp(resourcePath, "file.txt") == 0);
 
     return 0;
 }

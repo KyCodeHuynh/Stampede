@@ -4,12 +4,15 @@
 
 # Executables
 Stampede
+Client-Stampede
+Test-Stampede
 
 # Object files
 *.o
 *.ko
 *.obj
 *.elf
+*.dSYM
 
 # Precompiled Headers
 *.gch

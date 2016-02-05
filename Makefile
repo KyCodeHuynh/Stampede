@@ -21,7 +21,7 @@ client:
 	$(CC) $(FLAGS) -o $(CLIENT_NAME) $(CLIENTSRC)
 
 test:
-	$(CC) $(FLAGS) -o $(TEST_NAME) $(TESTSRC)
+	$(CC) $(FLAGS) -ggdb -o $(TEST_NAME) $(TESTSRC)
 	./$(TEST_NAME)
 
 clean:
