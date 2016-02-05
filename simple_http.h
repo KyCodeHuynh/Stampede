@@ -27,7 +27,6 @@ typedef enum http_status_code_t {
 extern const char HTTP_200_OK_RESPONSE[]; 
 extern const char HTTP_404_NOT_FOUND_RESPONSE[];
 
-
 // Parses a standard HTTP request
 // Inputs: 
     // A requestBuffer filled with the HTTP request, with all CRLFs preserved

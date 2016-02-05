@@ -22,6 +22,10 @@ int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath)
             char* curWord;
             for (;;) {
                 curWord = strtok(curLine, " ");
+                if (curWord == NULL) {
+                    break;
+                }
+
                 if (isFirstLine) {
                     if (strcmp(curWord, "GET") == 0) {
                         *verb = HTTP_GET;
@@ -46,11 +50,10 @@ int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath)
                 // TODO: Handle headers
                 // TODO: Basic HTTP format validation 
             }
-
-            // Placement of this matters, or else
-            // we'd proceed to the next line too soon.
-            curLine = strtok(requestBuffer, "\r\n");
         }
+        // Placement of this matters, or else
+        // we'd proceed to the next line too soon.
+        curLine = strtok(requestBuffer, "\r\n");
     } 
 
     return 0;
