@@ -2,6 +2,7 @@
 #define SIMPLE_HTTP_H
 
 #define REQUEST_BUFFER_SIZE 4096
+#define MAX_FILE_PATH_LENGTH 255
 
 // Specified by client as part of request
 typedef enum http_verb_t {
@@ -21,18 +22,24 @@ typedef enum http_status_code_t {
     HTTP_500_SERVER_ERROR
 } http_status_code_t;
 
+// Defined in server.c and declared here
+// for use across multiple files.
+extern const char HTTP_200_OK_RESPONSE[]; 
+extern const char HTTP_404_NOT_FOUND_RESPONSE[];
+
+
 // Parses a standard HTTP request
 // Inputs: 
     // A requestBuffer filled with the HTTP request, with all CRLFs preserved
 // Outputs: 
-    // A resourcePath like "/path/to/file.html" that was requested
-    // The type of request, given as a a http_verb_t value
+    // A pointer to a resourcePath like "/path/to/file.html" that will be replaced with the one used
+    // A pointer to the type of request, a http_verb_t value, to be replaced with the one used
     // TODO: A pointer to an array of header/setting key-value pairs that must be freed later
     // TODO: Define some sort of struct for header/setting pairs
 // Returns: 
     // 0 if successful 
     // -1 if invalid request
-int parse_request(char* requestBuffer, http_verb_t verb, char** resourcePath);
+int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath);
 
 // Responds to a standard HTTP request
 // Inputs: 

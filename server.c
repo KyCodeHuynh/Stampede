@@ -6,16 +6,38 @@
 #include "simple_http.h"
 #include "utility.h"
 
-#include <unistd.h>      // Standard system calls
-#include <sys/types.h>   // Definitions of a number of data types used in socket.h and netinet/in.h
-#include <sys/socket.h>  // Definitions of structures needed for sockets, e.g. sockaddr
-#include <sys/wait.h>    // waitpid() system call
 #include <netinet/in.h>  // Constants and structures needed for addresses, e.g. sockaddr_in
 #include <signal.h>      // Signal name macros, and the kill() prototype
 #include <stdint.h>
-#include <stdlib.h>      // malloc(), calloc(), EXIT_FAILURE, etc.
 #include <stdio.h>
+#include <stdlib.h>      // malloc(), calloc(), EXIT_FAILURE, etc.
 #include <strings.h>
+#include <sys/socket.h>  // Definitions of structures needed for sockets, e.g. sockaddr
+#include <sys/types.h>   // Definitions of a number of data types used in socket.h and netinet/in.h
+#include <sys/wait.h>    // waitpid() system call
+#include <unistd.h>      // Standard system calls
+
+// Note that the backslash is just for formatting
+// If only C had docstrings...
+// TODO: Will these backslashes appear in the response? 
+//
+// These need to be defined here to avoid a redefinition error.
+// Header will include them as an external constant. 
+// See: https://stackoverflow.com/questions/5499504/shared-c-constants-in-a-header
+// See: https://stackoverflow.com/questions/2328671/constant-variables-not-working-in-header
+const char HTTP_200_OK_RESPONSE[] 
+= "HTTP/1.1 200 OK\r\n\
+Connection: Keep-Alive\r\n";
+
+const char HTTP_404_NOT_FOUND_RESPONSE[]
+= "HTTP/1.1 404 Not Found\r\
+Connection: Close\r\n\
+Server: Stampede/0.1\r\n\
+\r\n\
+<html>\
+<head><title>Page Not Found</title></head>\
+<body>This is not the page you are looking for.</body>\
+</html>";
 
 int main(int argc, char *argv[])
 {
@@ -81,16 +103,18 @@ int main(int argc, char *argv[])
     // We're gonna process the request! 
     else {
         // Null-terminate the request so tokenizing doesn't return junk
-        // TODO: Protect against null-byte poisoning
         requestBuffer[receiveResult + 1] = '\0';
-    }
+       
+       // TODO: Call process_request(). Pass &resourcePath
 
-    // TODO: Send back the correct resource. 
+}
 
     printf("Here is the message: %s\n", requestBuffer);
 
     // Respond to client with requested resource
     // TODO: Use send() instead
+    // TODO: Append Content-Type to response
+    // TODO: Send back the correct resource. 
     int n = write(respondingSocketFD, "I got your message", 18);
     if (n < 0) {
         error("ERROR: writing to socket");
