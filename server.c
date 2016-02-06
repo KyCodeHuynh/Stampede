@@ -21,9 +21,9 @@
 // Header will include them as an external constant. 
 // See: https://stackoverflow.com/questions/5499504/shared-c-constants-in-a-header
 // See: https://stackoverflow.com/questions/2328671/constant-variables-not-working-in-header
-const char HTTP_200_OK_RESPONSE[] 
-= "HTTP/1.1 200 OK\r\nConnection: Keep-Alive\r\n";
-const off_t HTTP_200_OK_RESPONSE_LENGTH = 46;
+// const char HTTP_200_OK_RESPONSE[] 
+// = "HTTP/1.1 200 OK\r\nConnection: Keep-Alive\r\n";
+// const off_t HTTP_200_OK_RESPONSE_LENGTH = 46;
 
 // '\n' are for if anyone wants to view the HTML source 
 const char HTTP_404_NOT_FOUND_RESPONSE[]
@@ -106,9 +106,9 @@ int main(int argc, char *argv[])
 
         // Respond to client with requested resource
         parse_request(requestBuffer, &verb, &resourcePath, &type);
-        fprintf(stderr, "DEBUG: Got past parse_request()\n");
+        // fprintf(stderr, "DEBUG: Got past parse_request()\n");
         handle_request(verb, resourcePath, type, respondingSocketFD);
-        fprintf(stderr, "DEBUG: Got past handle_request()\n");
+        // fprintf(stderr, "DEBUG: Got past handle_request()\n");
     }
 
     // int n = write(respondingSocketFD, "I got your message", 18);

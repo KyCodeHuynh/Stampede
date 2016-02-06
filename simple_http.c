@@ -147,7 +147,7 @@ handle_request(http_verb_t verb,
                           type,
                           respondingSocket);
 
-            return HTTP_500_SERVER_ERROR;        
+            return 0;        
         }
 
         // Read file into buffer
@@ -180,39 +180,62 @@ send_response(http_status_code_t status,
               int respondingSocket)
 {
     switch (status) {
-        // I prefer the visual blocking of braces-everywhere
+        // I prefer the visual structure of braces-everywhere
         case HTTP_200_OK: {
-            send(respondingSocket, "HTTP/1.1 200 OK\r\nConnection: close\r\n", 40, 0);
-            // send(respondingSocket, "Server: Stampede/0.1\r\n", 24, 0);
+            // int send(int sockfd, const void *msg, int len, int flags);
+            // write(respondingSocket, "HTTP/1.1 200 OK\r\n", 19);
+            // // send(respondingSocket, "Server: Stampede/0.1\r\n", 24, 0);
 
-            char numericalLength[100];
-            sprintf(numericalLength, "Content-Length: %d\r\n", (int)resourceLength);
-            int numBytes = strlen(numericalLength);
-            send(respondingSocket, numericalLength, numBytes, 0);
+            // char numericalLength[150];
+
+            // sprintf(numericalLength, "Content-length: %i\r\n", (int)resourceLength);
+            // int numBytes = strlen(numericalLength);
+            // write(respondingSocket, numericalLength, numBytes);
 
             switch (type) {
                 case CONTENT_GIF: {
-                    send(respondingSocket, "Content-Type: image/gif\r\n", 23, 0);
+                    // TODO: Replace hacky fix
+                    // write(respondingSocket, "Content-type: image/gif\r\n", 23);
+                    const char header[100];
+                    sprintf((char *)header, "HTTP/1.1 200 OK\r\nContent-length: %i\r\nContent-type:image/gif\r\n\r\n", (int)resourceLength);
+                    write(respondingSocket, header, strlen(header));
+                    write(respondingSocket, resourceBuffer, resourceLength);
                     break;
                 }
                 case CONTENT_HTML: {
-                    send(respondingSocket, "Content-Type: text/html\r\n", 27, 0);
+                    // write(respondingSocket, "Content-type: text/html\r\n", 27);
+                    const char header[100];
+                    sprintf((char *)header, "HTTP/1.1 200 OK\r\nContent-length: %i\r\nContent-type:text/html\r\n\r\n", (int)resourceLength);
+                    write(respondingSocket, header, strlen(header));
+                    write(respondingSocket, resourceBuffer, resourceLength);
                     break;
                 }
                 case CONTENT_JPEG: {
-                    send(respondingSocket, "Content-Type: text/jpeg\r\n", 27, 0);
+                    // write(respondingSocket, "Content-type: image/jpeg\r\n", 28);
+                    const char header[100];
+                    sprintf((char *)header, "HTTP/1.1 200 OK\r\nContent-length: %i\r\nContent-type:image/jpeg\r\n\r\n", (int)resourceLength);
+                    write(respondingSocket, header, strlen(header));
+                    write(respondingSocket, resourceBuffer, resourceLength);
                     break;
                 }
                 case CONTENT_TEXT: {
-                    send(respondingSocket, "Content-Type: text/plain\r\n", 28, 0);
+                    // write(respondingSocket, "Content-type: text/plain\r\n", 28);
+                    const char header[100];
+                    sprintf((char *)header, "HTTP/1.1 200 OK\r\nContent-length: %i\r\nContent-type:text/plain\r\n\r\n", (int)resourceLength);
+                    write(respondingSocket, header, strlen(header));
+                    write(respondingSocket, resourceBuffer, resourceLength);
                     break;
                 }
                 default: {
-                    send(respondingSocket, "Content-Type: text/plain\r\n", 28, 0);
+                    // write(respondingSocket, "Content-Type: text/plain\r\n", 28);
+                    const char header[100];
+                    sprintf((char *)header, "HTTP/1.1 200 OK\r\nContent-length: %i\r\nContent-type:text/plain\r\n\r\n", (int)resourceLength);
+                    write(respondingSocket, header, strlen(header));
+                    write(respondingSocket, resourceBuffer, resourceLength);
                 }
             }
-            send(respondingSocket, "\r\n", 2, 0);
-            send(respondingSocket, resourceBuffer, resourceLength, 0);
+            write(respondingSocket, "\r\n", 4);
+            write(respondingSocket, resourceBuffer, resourceLength);
 
             return 0;
         }
@@ -228,7 +251,6 @@ send_response(http_status_code_t status,
         }
 
         case HTTP_404_NOT_FOUND: {
-            // int send(int sockfd, const void *msg, int len, int flags);
             send(respondingSocket, resourceBuffer, resourceLength, 0);
             return 0;
         }
@@ -239,5 +261,6 @@ send_response(http_status_code_t status,
         }
     }
 
+    fprintf(stderr, "DEBUG: Internal error in send_response()\n");
     return -1;
 }
