@@ -1,19 +1,25 @@
 #include "simple_http.h"
+#include "utility.h"
 
+#include <fcntl.h>    // open()
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h> // stat()
+#include <unistd.h>   // System calls like read() and write()
 
-// TODO: Test this separately in a simple_http_test.c
 // See Section 2.2 of Computer Networking (Kurose and Ross, 6th Edition)
 // for a summary of HTTP, its use and format, etc.
-int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath)
+int 
+parse_request(char* requestBuffer, 
+              http_verb_t* verb, 
+              char** resourcePath)
 {
     // First line is a special case 
     bool isFirstLine = true;
 
-    // Tokenize the request by lines, then by words within lines.
-    // We fill curLinen right away to avoid prematurely tripping the NULL check
+    // TODO: Protect against null-byte poisoning
+    // We fill curLine right away to avoid prematurely tripping the NULL check
     char* curLine = strtok(requestBuffer, "\r\n");
     char* curWord = strtok(curLine, " ");
     for (;;) {
@@ -33,21 +39,17 @@ int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath)
                 return -1;
             }
 
-            // Second token should be /path/to/resource, 
-            // so we need to strip the leading slash,
-            // for which we can just increment the pointer.
-            // strtok() expects a NULL upon subsequent calls
-            // to advance forward internally to the next token.
+            // Second token should be /path/to/resource, so we need to strip
+            // the leading slash, for which we can just increment the pointer.
+            // strtok() expects a NULL upon subsequent calls to advance
+            // forward internally to the next token.
             curWord = strtok(NULL, " ");
-            // Pointer-to-pointer so that it is modifiable
-            // despite being passed into a function
             *resourcePath = curWord + 1;
 
             isFirstLine = false;
             break;
         }
-        // The rest is header parsing
-        // Request won't have a body
+        // The rest is header parsing. Request won't have a body
         // TODO: Handle headers. Would need outer loop for multiple lines.
         // TODO: Basic HTTP format validation 
     }
@@ -55,17 +57,69 @@ int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath)
     return 0;
 }
 
+// TODO: Send response based on status code, file contents, socket
+int 
+send_response(http_status_code_t status, 
+              const char* resourceBuffer, 
+              const off_t resourceLength, 
+              int respondingSocket)
+{
+    // TODO: Use send() 
+    // TODO: Append Encoding, Content-Type, Content-Length to response
+    return 0;
+}
+
 
 // TODO: Test this separately
-http_status_code_t handle_request(http_verb_t verb, char* resourcePath, int respondingSocket)
+http_status_code_t 
+handle_request(http_verb_t verb, 
+               char* resourcePath, 
+               int respondingSocket)
 {
-    // Could just attempt to locate resource with 
-    // an fstat(), fopen() etc., and return 404 if needed. 
+    // Load the file into a buffer for sending back to the client
+    if (verb == HTTP_GET) {
+        // Note that "f"-functions like fopen(), fstat(), etc. are standard only to POSIX, not C
+        int fileDescrip = open((const char *) resourcePath, O_RDONLY);
+        if (fileDescrip < 0) {
+            send_response(HTTP_404_NOT_FOUND, 
+                          HTTP_404_NOT_FOUND_RESPONSE, 
+                          HTTP_404_NOT_FOUND_RESPONSE_LENGTH, 
+                          respondingSocket);
 
-    // TODO: open() vs fopen()
-    // open() supports giving the full path
+            return HTTP_404_NOT_FOUND;
+        }
 
-    // TODO: Protect against null-byte poisoning
+        // CERT recommends against fseek() and ftell() for determining file size
+        // See: https://is.gd/mwJDph-
+        struct stat fileInfo;
 
-    return HTTP_200_OK;
+        // State failed for some reason
+        if (stat((const char *) resourcePath, &fileInfo) < 0) {
+            send_response(HTTP_500_SERVER_ERROR, 
+                          HTTP_500_SERVER_ERROR_RESPONSE, 
+                          HTTP_500_SERVER_ERROR_RESPONSE_LENGTH, 
+                          respondingSocket);
+
+            return HTTP_500_SERVER_ERROR;
+        }   
+        // Not a regular file
+        if (! S_ISREG(fileInfo.st_mode)) {
+            send_response(HTTP_500_SERVER_ERROR, 
+                          HTTP_500_SERVER_ERROR_RESPONSE, 
+                          HTTP_500_SERVER_ERROR_RESPONSE_LENGTH, 
+                          respondingSocket);
+
+            return HTTP_500_SERVER_ERROR;        
+        }
+
+        // Read file into buffer
+        off_t fileSize = fileInfo.st_size;
+
+
+
+        // TODO: Use send_response()
+        return HTTP_200_OK;
+    }
+
+    return HTTP_500_SERVER_ERROR;
 }

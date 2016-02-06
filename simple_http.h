@@ -1,6 +1,8 @@
 #ifndef SIMPLE_HTTP_H
 #define SIMPLE_HTTP_H
 
+#include <sys/stat.h>
+
 #define REQUEST_BUFFER_SIZE 4096
 #define MAX_FILE_PATH_LENGTH 255
 
@@ -16,16 +18,20 @@ typedef enum http_verb_t {
 // Returned by server to client
 typedef enum http_status_code_t {
     HTTP_200_OK,
-    HTTP_404_NOT_FOUND, 
     HTTP_400_BAD_REQUEST,
     HTTP_403_UNAUTHORIZED,
+    HTTP_404_NOT_FOUND, 
     HTTP_500_SERVER_ERROR
 } http_status_code_t;
 
 // Defined in server.c and declared here
 // for use across multiple files.
 extern const char HTTP_200_OK_RESPONSE[]; 
+extern const off_t HTTP_200_OK_RESPONSE_LENGTH;
 extern const char HTTP_404_NOT_FOUND_RESPONSE[];
+extern const off_t HTTP_404_NOT_FOUND_RESPONSE_LENGTH;
+extern const char HTTP_500_SERVER_ERROR_RESPONSE[];
+extern const off_t HTTP_500_SERVER_ERROR_RESPONSE_LENGTH;
 
 // Parses a standard HTTP request
 // Inputs: 
@@ -38,9 +44,29 @@ extern const char HTTP_404_NOT_FOUND_RESPONSE[];
 // Returns: 
     // 0 if successful 
     // -1 if invalid request
-int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath);
+int 
+parse_request(char* requestBuffer, 
+                  http_verb_t* verb, 
+                  char** resourcePath);
 
 // Responds to a standard HTTP request
+// Inputs: 
+    // The HTTP status to return
+    // A buffer containing the resource to return
+    // The length of the resource
+    // The socket on which to respond
+// Outputs: 
+    // None
+// Returns: 
+    // 0 if successful
+    // -1 if an error occurs while sending
+int 
+send_response(http_status_code_t status, 
+              const char* resourceBuffer, 
+              const off_t resourceLength, 
+              int respondingSocket);
+
+// Coordinates the server handling of a standard HTTP request
 // Inputs: 
     // The HTTP verb
     // The resourcePath (note the differing type; now just need to read it)
@@ -49,6 +75,9 @@ int parse_request(char* requestBuffer, http_verb_t* verb, char** resourcePath);
     // None
 // Returns: 
     // An HTTP status code
-http_status_code_t handle_request(http_verb_t verb, char* resourcePath, int respondingSocket);
+http_status_code_t 
+handle_request(http_verb_t verb, 
+               char* resourcePath, 
+               int respondingSocket);
 
 #endif

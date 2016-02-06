@@ -3,6 +3,4 @@
 
 void error(char* message);
 
-
-
 #endif
