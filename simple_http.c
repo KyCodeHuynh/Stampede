@@ -48,7 +48,7 @@ parse_request(char* requestBuffer,
             // forward internally to the next token.
             curWord = strtok(NULL, " ");
             *resourcePath = curWord + 1;
-            fprintf(stderr, "DEBUG: Path to resource: %s\n", *resourcePath);
+            // fprintf(stderr, "DEBUG: Path to resource: %s\n", *resourcePath);
 
             // Get the file extension: ".jpeg" -> "jpeg"
             char* fileExt = strrchr((const char *) *resourcePath, '.');
@@ -57,10 +57,10 @@ parse_request(char* requestBuffer,
                 *type = CONTENT_TEXT;
             }
 
-            fprintf(stderr, "DEBUG: File extension: %s [Line: %d]\n", fileExt, __LINE__);
+            // fprintf(stderr, "DEBUG: File extension: %s [Line: %d]\n", fileExt, __LINE__);
             // fprintf(stderr, "DEBUG: Got past the strrchr() [Line: %d]\n", __LINE__);
             fileExt += 1;
-            fprintf(stderr, "DEBUG: File extension without dot: %s [Line %d]\n", fileExt, __LINE__);
+            // fprintf(stderr, "DEBUG: File extension without dot: %s [Line %d]\n", fileExt, __LINE__);
             // str_tolower(fileExt);
 
             if (strcmp(fileExt, "gif") == 0) {
@@ -83,8 +83,7 @@ parse_request(char* requestBuffer,
             break;
         }
         // The rest is header parsing. Request won't have a body
-        // TODO: Handle headers. Would need outer loop for multiple lines.
-        // TODO: Basic HTTP format validation 
+        // TODO: Basic HTTP format validation.
     }
 
     return 0;
@@ -159,7 +158,6 @@ handle_request(http_verb_t verb,
 }
 
 
-// TODO: Send response based on status code, file contents, socket
 int 
 send_response(http_status_code_t status, 
               const char* resourceBuffer, 
@@ -167,11 +165,28 @@ send_response(http_status_code_t status,
               content_type_t type,
               int respondingSocket)
 {
-    // TODO: Use send() 
-    // TODO: Append Encoding, Content-Type, Content-Length to response
     switch (status) {
         // I prefer the visual blocking of braces-everywhere
         case HTTP_200_OK: {
+            send(respondingSocket, "HTTP/1.1 200 OK\r\nConnection: close\r\n", 40, 0);
+            send(respondingSocket, "Server: Stampede/0.1\r\n", 24, 0);
+            send(respondingSocket, "Content-Length: resourceLength\r\n", 34, 0);
+            switch (type) {
+                case CONTENT_GIF: {
+                    send(respondingSocket, "Content-Type: image/gif\r\n", 23, 0);
+                }
+                case CONTENT_HTML: {
+                    send(respondingSocket, "Content-Type: text/html\r\n", 27, 0);
+                }
+                case CONTENT_JPEG: {
+                    send(respondingSocket, "Content-Type: text/jpeg\r\n", 27, 0);
+                }
+                case CONTENT_TEXT: {
+                    send(respondingSocket, "Content-Type: text/plain\r\n", 28, 0);
+                }
+            }
+            send(respondingSocket, "\r\n", 2, 0);
+            send(respondingSocket, resourceBuffer, resourceLength, 0);
 
             return 0;
         }
@@ -196,7 +211,6 @@ send_response(http_status_code_t status,
             send(respondingSocket, resourceBuffer, resourceLength, 0);
             return 0;
         }
-
     }
 
     return -1;
