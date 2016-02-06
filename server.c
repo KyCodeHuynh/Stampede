@@ -17,11 +17,7 @@
 #include <sys/wait.h>    // waitpid() system call
 #include <unistd.h>      // Standard system calls
 
-// Note that the backslash is just for formatting
-// If only C had docstrings...
-// TODO: Will these backslashes appear in the response? 
-//
-// These need to be defined here to avoid a redefinition error.
+
 // Header will include them as an external constant. 
 // See: https://stackoverflow.com/questions/5499504/shared-c-constants-in-a-header
 // See: https://stackoverflow.com/questions/2328671/constant-variables-not-working-in-header
@@ -83,7 +79,6 @@ int main(int argc, char *argv[])
     }
 
     // Load the request into a buffer
-    // TODO: Update to use Content-Length reported by request
     // Expand buffer size as needed. 
     char requestBuffer[REQUEST_BUFFER_SIZE];
     memset(requestBuffer, 0, REQUEST_BUFFER_SIZE); 
@@ -106,7 +101,8 @@ int main(int argc, char *argv[])
         printf("Client request:\n %s\n", requestBuffer);
 
         // Respond to client with requested resource
-        // TODO: Call process_request(). Pass &resourcePath
+        // TODO: Call parse_request(). Pass &resourcePath
+        // TODO: Call handle_request().
     }
 
     int n = write(respondingSocketFD, "I got your message", 18);

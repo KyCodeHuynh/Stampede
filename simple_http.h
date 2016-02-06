@@ -1,10 +1,10 @@
 #ifndef SIMPLE_HTTP_H
 #define SIMPLE_HTTP_H
 
-#include <sys/stat.h>
-
 #define REQUEST_BUFFER_SIZE 4096
 #define MAX_FILE_PATH_LENGTH 255
+
+#include <sys/stat.h>
 
 // Specified by client as part of request
 typedef enum http_verb_t {
@@ -23,6 +23,13 @@ typedef enum http_status_code_t {
     HTTP_404_NOT_FOUND, 
     HTTP_500_SERVER_ERROR
 } http_status_code_t;
+
+typedef enum content_type_t {
+    CONTENT_HTML, 
+    CONTENT_TEXT, 
+    CONTENT_GIF, 
+    CONTENT_JPEG
+} content_type_t;
 
 // Defined in server.c and declared here
 // for use across multiple files.
@@ -46,8 +53,28 @@ extern const off_t HTTP_500_SERVER_ERROR_RESPONSE_LENGTH;
     // -1 if invalid request
 int 
 parse_request(char* requestBuffer, 
-                  http_verb_t* verb, 
-                  char** resourcePath);
+              http_verb_t* verb, 
+              char** resourcePath,
+              content_type_t* type);
+
+// Coordinates the server handling of a standard HTTP request
+// Inputs: 
+    // The HTTP verb
+    // The resourcePath (note the differing type; now just need to read it)
+    // The socket on which to respond
+// Outputs: 
+    // None
+// Returns: 
+    // 0 if successful
+    // -1 if an error occurs while handling. 
+    // Note that only irrecoverable errors rate a -1, i.e., 
+    // a read() failed for a file that should exist, not that 
+    // a file did not exist (which would be a simple 404 case).
+int 
+handle_request(http_verb_t verb, 
+               char* resourcePath, 
+               content_type_t type,
+               int respondingSocket);
 
 // Responds to a standard HTTP request
 // Inputs: 
@@ -64,20 +91,7 @@ int
 send_response(http_status_code_t status, 
               const char* resourceBuffer, 
               const off_t resourceLength, 
+              content_type_t type,
               int respondingSocket);
-
-// Coordinates the server handling of a standard HTTP request
-// Inputs: 
-    // The HTTP verb
-    // The resourcePath (note the differing type; now just need to read it)
-    // The socket on which to respond
-// Outputs: 
-    // None
-// Returns: 
-    // An HTTP status code
-http_status_code_t 
-handle_request(http_verb_t verb, 
-               char* resourcePath, 
-               int respondingSocket);
 
 #endif

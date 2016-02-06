@@ -4,7 +4,9 @@
 #include <fcntl.h>    // open()
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <sys/stat.h> // stat()
 #include <unistd.h>   // System calls like read() and write()
 
@@ -13,7 +15,8 @@
 int 
 parse_request(char* requestBuffer, 
               http_verb_t* verb, 
-              char** resourcePath)
+              char** resourcePath, 
+              content_type_t* type)
 {
     // First line is a special case 
     bool isFirstLine = true;
@@ -46,6 +49,9 @@ parse_request(char* requestBuffer,
             curWord = strtok(NULL, " ");
             *resourcePath = curWord + 1;
 
+            
+
+
             isFirstLine = false;
             break;
         }
@@ -57,23 +63,12 @@ parse_request(char* requestBuffer,
     return 0;
 }
 
-// TODO: Send response based on status code, file contents, socket
-int 
-send_response(http_status_code_t status, 
-              const char* resourceBuffer, 
-              const off_t resourceLength, 
-              int respondingSocket)
-{
-    // TODO: Use send() 
-    // TODO: Append Encoding, Content-Type, Content-Length to response
-    return 0;
-}
-
 
 // TODO: Test this separately
-http_status_code_t 
+int
 handle_request(http_verb_t verb, 
                char* resourcePath, 
+               content_type_t type,
                int respondingSocket)
 {
     // Load the file into a buffer for sending back to the client
@@ -84,9 +79,10 @@ handle_request(http_verb_t verb,
             send_response(HTTP_404_NOT_FOUND, 
                           HTTP_404_NOT_FOUND_RESPONSE, 
                           HTTP_404_NOT_FOUND_RESPONSE_LENGTH, 
+                          type,
                           respondingSocket);
 
-            return HTTP_404_NOT_FOUND;
+            return 0;
         }
 
         // CERT recommends against fseek() and ftell() for determining file size
@@ -98,15 +94,17 @@ handle_request(http_verb_t verb,
             send_response(HTTP_500_SERVER_ERROR, 
                           HTTP_500_SERVER_ERROR_RESPONSE, 
                           HTTP_500_SERVER_ERROR_RESPONSE_LENGTH, 
+                          type,
                           respondingSocket);
 
-            return HTTP_500_SERVER_ERROR;
+            return 0;
         }   
         // Not a regular file
         if (! S_ISREG(fileInfo.st_mode)) {
             send_response(HTTP_500_SERVER_ERROR, 
                           HTTP_500_SERVER_ERROR_RESPONSE, 
                           HTTP_500_SERVER_ERROR_RESPONSE_LENGTH, 
+                          type,
                           respondingSocket);
 
             return HTTP_500_SERVER_ERROR;        
@@ -114,12 +112,65 @@ handle_request(http_verb_t verb,
 
         // Read file into buffer
         off_t fileSize = fileInfo.st_size;
+        char* resourceBuffer = (char *)malloc(sizeof(char) * fileSize);
+        if (read(fileDescrip, resourceBuffer, fileSize) < 0) {
+            return -1;
+        }
 
+        // Send back the actual response 
+        int result = send_response(HTTP_200_OK, resourceBuffer, fileSize, type, respondingSocket);
+        if (result < 0) {
+            return -1;
+        }
 
+        free(resourceBuffer);
 
-        // TODO: Use send_response()
-        return HTTP_200_OK;
+        return 0;
     }
 
-    return HTTP_500_SERVER_ERROR;
+    return -1;
+}
+
+
+// TODO: Send response based on status code, file contents, socket
+int 
+send_response(http_status_code_t status, 
+              const char* resourceBuffer, 
+              const off_t resourceLength, 
+              content_type_t type,
+              int respondingSocket)
+{
+    // TODO: Use send() 
+    // TODO: Append Encoding, Content-Type, Content-Length to response
+    switch (status) {
+        // I prefer the visual blocking of braces-everywhere
+        case HTTP_200_OK: {
+
+            return 0;
+        }
+
+        case HTTP_400_BAD_REQUEST: {
+            // TODO: Implement handling
+            return 0;
+        }
+
+        case HTTP_403_UNAUTHORIZED: {
+            // TODO: Implement handling
+            return 0;
+        }
+
+        case HTTP_404_NOT_FOUND: {
+            // int send(int sockfd, const void *msg, int len, int flags);
+            send(respondingSocket, resourceBuffer, resourceLength, 0);
+            return 0;
+        }
+
+        case HTTP_500_SERVER_ERROR: {
+            send(respondingSocket, resourceBuffer, resourceLength, 0);
+            return 0;
+        }
+
+    }
+
+    return -1;
 }
