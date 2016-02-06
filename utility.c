@@ -15,3 +15,9 @@ void error(char* message)
     exit(EXIT_FAILURE);
 }
 
+void signal_handler_sigchld(int signal)
+{
+    while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {
+        // Reclaim zombie child's PID
+    }
+}

@@ -17,7 +17,6 @@
 #include <sys/wait.h>    // waitpid() system call
 #include <unistd.h>      // Standard system calls
 
-
 // Header will include them as an external constant. 
 // See: https://stackoverflow.com/questions/5499504/shared-c-constants-in-a-header
 // See: https://stackoverflow.com/questions/2328671/constant-variables-not-working-in-header
@@ -71,52 +70,71 @@ int main(int argc, char *argv[])
     // 5 simultaneous connections at most 
     listen(listeningSocketFD, 5);
 
-    // Accept connections
-    struct sockaddr_in clientAddress;
-    socklen_t clientSocketLength;
-    int respondingSocketFD = accept(listeningSocketFD, (struct sockaddr *) &clientAddress, &clientSocketLength);
-    if (respondingSocketFD < 0) {
-        error("ERROR: on accept");
+    // Register signal handler for reaping zombie children
+    struct sigaction sigAction;
+
+    sigAction.sa_handler = &signal_handler_sigchld;
+    sigemptyset(&sigAction.sa_mask);
+    sigAction.sa_flags = SA_NOCLDSTOP | SA_RESTART;
+
+    if (sigaction(SIGCHLD, &sigAction, 0) == -1) {
+        error("ERROR: registering a signal handler for zombie children failed");
     }
 
-    // Load the request into a buffer
-    // Expand buffer size as needed. 
-    char requestBuffer[REQUEST_BUFFER_SIZE];
-    memset(requestBuffer, 0, REQUEST_BUFFER_SIZE); 
-    http_verb_t verb;
-    char* resourcePath = NULL;
-    content_type_t type;
+    for (;;) {
+        // Accept connections
+        struct sockaddr_in clientAddress;
+        socklen_t clientSocketLength;
+        int respondingSocketFD = accept(listeningSocketFD, (struct sockaddr *) &clientAddress, &clientSocketLength);
+        if (respondingSocketFD < 0) {
+            error("ERROR: on accept");
+        }
 
-    // recv() returns the number of bytes actually read in
-    // -1 on error, and 0 upon closed connection (which we
-    // assume is not due to error [for now])
-    int receiveResult = recv(respondingSocketFD, (char *)requestBuffer, REQUEST_BUFFER_SIZE, 0);
-    if (receiveResult < 0) {
-        error("ERROR: receiving request from client failed");
+        // Load the request into a buffer
+        // Expand buffer size as needed. 
+        char requestBuffer[REQUEST_BUFFER_SIZE];
+        memset(requestBuffer, 0, REQUEST_BUFFER_SIZE); 
+        http_verb_t verb;
+        char* resourcePath = NULL;
+        content_type_t type;
+
+        // recv() returns the number of bytes actually read in
+        // -1 on error, and 0 upon closed connection (which we
+        // assume is not due to error [for now])
+        int receiveResult = recv(respondingSocketFD, (char *)requestBuffer, REQUEST_BUFFER_SIZE, 0);
+        if (receiveResult < 0) {
+            error("ERROR: receiving request from client failed");
+        }
+        else if (receiveResult == 0) {
+            // Other side closed the connection
+            close(respondingSocketFD);
+        }
+        // We're gonna process the request! 
+        else {
+            pid_t pid = fork();
+            if (pid < 0) {
+                error("ERROR: fork()ing off a new child failed");
+            }
+            // Inside the child process
+            else if (pid == 0) {
+                 // Null-terminate the request so tokenizing doesn't return junk
+                requestBuffer[receiveResult + 1] = '\0';
+                printf("Client request:\n %s\n", requestBuffer);
+
+                // Parent handles listening; child handles responding
+                close(listeningSocketFD);
+
+                // Respond to client with requested resource
+                parse_request(requestBuffer, &verb, &resourcePath, &type);
+                // fprintf(stderr, "DEBUG: Got past parse_request()\n");
+                handle_request(verb, resourcePath, type, respondingSocketFD);
+                // fprintf(stderr, "DEBUG: Got past handle_request()\n");
+            }
+           
+        }
+
+        close(listeningSocketFD);
     }
-    else if (receiveResult == 0) {
-        // Other side closed the connection
-        close(respondingSocketFD);
-    }
-    // We're gonna process the request! 
-    else {
-        // Null-terminate the request so tokenizing doesn't return junk
-        requestBuffer[receiveResult + 1] = '\0';
-        printf("Client request:\n %s\n", requestBuffer);
-
-        // Respond to client with requested resource
-        parse_request(requestBuffer, &verb, &resourcePath, &type);
-        // fprintf(stderr, "DEBUG: Got past parse_request()\n");
-        handle_request(verb, resourcePath, type, respondingSocketFD);
-        // fprintf(stderr, "DEBUG: Got past handle_request()\n");
-    }
-
-    // int n = write(respondingSocketFD, "I got your message", 18);
-    // if (n < 0) {
-    //     error("ERROR: writing to socket");
-    // }
-
-    close(listeningSocketFD);
 
     return EXIT_SUCCESS; 
 }
