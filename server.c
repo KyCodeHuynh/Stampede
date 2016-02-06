@@ -17,27 +17,22 @@
 #include <sys/wait.h>    // waitpid() system call
 #include <unistd.h>      // Standard system calls
 
-// Note that the backslash is just for formatting
-// If only C had docstrings...
-// TODO: Will these backslashes appear in the response? 
-//
-// These need to be defined here to avoid a redefinition error.
+
 // Header will include them as an external constant. 
 // See: https://stackoverflow.com/questions/5499504/shared-c-constants-in-a-header
 // See: https://stackoverflow.com/questions/2328671/constant-variables-not-working-in-header
-const char HTTP_200_OK_RESPONSE[] 
-= "HTTP/1.1 200 OK\r\n\
-Connection: Keep-Alive\r\n";
+// const char HTTP_200_OK_RESPONSE[] 
+// = "HTTP/1.1 200 OK\r\nConnection: Keep-Alive\r\n";
+// const off_t HTTP_200_OK_RESPONSE_LENGTH = 46;
 
+// '\n' are for if anyone wants to view the HTML source 
 const char HTTP_404_NOT_FOUND_RESPONSE[]
-= "HTTP/1.1 404 Not Found\r\
-Connection: Close\r\n\
-Server: Stampede/0.1\r\n\
-\r\n\
-<html>\
-<head><title>Page Not Found</title></head>\
-<body>This is not the page you are looking for.</body>\
-</html>";
+= "HTTP/1.1 404 Not Found\r\nConnection: Close\r\nServer: Stampede/0.1\r\n\r\n<html>\n<head><title>Page Not Found</title></head>\n<body>This is not the page you are looking for.</body></html>";
+const off_t HTTP_404_NOT_FOUND_RESPONSE_LENGTH = 191;
+
+const char HTTP_500_SERVER_ERROR_RESPONSE[]
+= "HTTP/1.1 500 Server Error\r\nConnection: Close\r\nServer: Stampede/0.1\r\n\r\n<html>\n<head><title>Server Error</title></head>\n<body>We're sorry, something has gone wrong.</body></html>";
+const off_t HTTP_500_SERVER_ERROR_RESPONSE_LENGTH = 189;
 
 int main(int argc, char *argv[])
 {
@@ -59,8 +54,9 @@ int main(int argc, char *argv[])
 
     // Sanity checks on port number
     uint16_t portNum = atoi(argv[1]);
+    fprintf(stderr, "Port number: %d [Line: %d]\n", portNum, __LINE__);
 
-    if (portNum < 0 || portNum < UINT16_MAX ) {
+    if (portNum < 0 || UINT16_MAX < portNum) {
         error("ERROR: invalid port number (allowable range is 0-65535)");
     }
 
@@ -84,10 +80,12 @@ int main(int argc, char *argv[])
     }
 
     // Load the request into a buffer
-    // TODO: Update to use Content-Length reported by request
     // Expand buffer size as needed. 
     char requestBuffer[REQUEST_BUFFER_SIZE];
     memset(requestBuffer, 0, REQUEST_BUFFER_SIZE); 
+    http_verb_t verb;
+    char* resourcePath = NULL;
+    content_type_t type;
 
     // recv() returns the number of bytes actually read in
     // -1 on error, and 0 upon closed connection (which we
@@ -104,21 +102,19 @@ int main(int argc, char *argv[])
     else {
         // Null-terminate the request so tokenizing doesn't return junk
         requestBuffer[receiveResult + 1] = '\0';
-       
-       // TODO: Call process_request(). Pass &resourcePath
+        printf("Client request:\n %s\n", requestBuffer);
 
-}
-
-    printf("Here is the message: %s\n", requestBuffer);
-
-    // Respond to client with requested resource
-    // TODO: Use send() instead
-    // TODO: Append Content-Type to response
-    // TODO: Send back the correct resource. 
-    int n = write(respondingSocketFD, "I got your message", 18);
-    if (n < 0) {
-        error("ERROR: writing to socket");
+        // Respond to client with requested resource
+        parse_request(requestBuffer, &verb, &resourcePath, &type);
+        // fprintf(stderr, "DEBUG: Got past parse_request()\n");
+        handle_request(verb, resourcePath, type, respondingSocketFD);
+        // fprintf(stderr, "DEBUG: Got past handle_request()\n");
     }
+
+    // int n = write(respondingSocketFD, "I got your message", 18);
+    // if (n < 0) {
+    //     error("ERROR: writing to socket");
+    // }
 
     close(listeningSocketFD);
 

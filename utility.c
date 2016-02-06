@@ -1,4 +1,6 @@
 #include "utility.h" 
+
+#include <ctype.h>
 #include <stdlib.h> 
 #include <stdio.h>
 
@@ -12,3 +14,4 @@ void error(char* message)
     perror(message); 
     exit(EXIT_FAILURE);
 }
+

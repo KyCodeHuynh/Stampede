@@ -10,7 +10,7 @@ FLAGS = -std=c99 -Wall -Wextra
 
 SRC = server.c simple_http.c utility.c
 CLIENTSRC = client.c
-TESTSRC = simple_http_test.c simple_http.c
+TESTSRC = simple_http_test.c simple_http.c utility.c
 
 all: server
 	
@@ -21,7 +21,7 @@ client:
 	$(CC) $(FLAGS) -o $(CLIENT_NAME) $(CLIENTSRC)
 
 test:
-	$(CC) $(FLAGS) -o $(TEST_NAME) $(TESTSRC)
+	$(CC) $(FLAGS) -ggdb -o $(TEST_NAME) $(TESTSRC)
 	./$(TEST_NAME)
 
 clean:
