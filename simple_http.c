@@ -54,7 +54,10 @@ parse_request(char* requestBuffer,
             char* fileExt = strrchr((const char *) *resourcePath, '.');
             // No dot was found, so assume of text type
             if (fileExt == NULL) {
+                *resourcePath = "";
                 *type = CONTENT_TEXT;
+
+                return 0;
             }
 
             // fprintf(stderr, "DEBUG: File extension: %s [Line: %d]\n", fileExt, __LINE__);

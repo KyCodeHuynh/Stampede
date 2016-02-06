@@ -106,7 +106,9 @@ int main(int argc, char *argv[])
 
         // Respond to client with requested resource
         parse_request(requestBuffer, &verb, &resourcePath, &type);
+        fprintf(stderr, "DEBUG: Got past parse_request()\n");
         handle_request(verb, resourcePath, type, respondingSocketFD);
+        fprintf(stderr, "DEBUG: Got past handle_request()\n");
     }
 
     // int n = write(respondingSocketFD, "I got your message", 18);
