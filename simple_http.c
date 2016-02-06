@@ -48,9 +48,36 @@ parse_request(char* requestBuffer,
             // forward internally to the next token.
             curWord = strtok(NULL, " ");
             *resourcePath = curWord + 1;
+            fprintf(stderr, "DEBUG: Path to resource: %s\n", *resourcePath);
 
-            
+            // Get the file extension: ".jpeg" -> "jpeg"
+            char* fileExt = strrchr((const char *) *resourcePath, '.');
+            // No dot was found, so assume of text type
+            if (fileExt == NULL) {
+                *type = CONTENT_TEXT;
+            }
 
+            fprintf(stderr, "DEBUG: File extension: %s [Line: %d]\n", fileExt, __LINE__);
+            // fprintf(stderr, "DEBUG: Got past the strrchr() [Line: %d]\n", __LINE__);
+            fileExt += 1;
+            fprintf(stderr, "DEBUG: File extension without dot: %s [Line %d]\n", fileExt, __LINE__);
+            // str_tolower(fileExt);
+
+            if (strcmp(fileExt, "gif") == 0) {
+                *type = CONTENT_GIF;
+            }
+            else if (strcmp(fileExt, "html") == 0) {
+                *type = CONTENT_HTML;
+            }
+            else if (strcmp(fileExt, "jpeg") == 0
+                  || strcmp(fileExt, "jpg") == 0) {
+                *type = CONTENT_JPEG;
+            }
+            else if (strcmp(fileExt, "txt") == 0) {
+                *type = CONTENT_TEXT;
+            }
+
+            // fprintf(stderr, "DEBUG: Got past the fileExt type-matching [Line: %d]\n", __LINE__);
 
             isFirstLine = false;
             break;

@@ -25,10 +25,10 @@ typedef enum http_status_code_t {
 } http_status_code_t;
 
 typedef enum content_type_t {
-    CONTENT_HTML, 
-    CONTENT_TEXT, 
     CONTENT_GIF, 
-    CONTENT_JPEG
+    CONTENT_HTML, 
+    CONTENT_JPEG,
+    CONTENT_TEXT 
 } content_type_t;
 
 // Defined in server.c and declared here

@@ -10,7 +10,7 @@ FLAGS = -std=c99 -Wall -Wextra
 
 SRC = server.c simple_http.c utility.c
 CLIENTSRC = client.c
-TESTSRC = simple_http_test.c simple_http.c
+TESTSRC = simple_http_test.c simple_http.c utility.c
 
 all: server
 	
