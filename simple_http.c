@@ -99,6 +99,17 @@ handle_request(http_verb_t verb,
 {
     // Load the file into a buffer for sending back to the client
     if (verb == HTTP_GET) {
+        // Special case: we don't have anything at root '/'
+        if (strcmp(resourcePath, "") == 0) {
+            send_response(HTTP_404_NOT_FOUND, 
+                          HTTP_404_NOT_FOUND_RESPONSE, 
+                          HTTP_404_NOT_FOUND_RESPONSE_LENGTH, 
+                          type,
+                          respondingSocket);
+
+            return 0;
+        }
+
         // Note that "f"-functions like fopen(), fstat(), etc. are standard only to POSIX, not C
         int fileDescrip = open((const char *) resourcePath, O_RDONLY);
         if (fileDescrip < 0) {
@@ -169,19 +180,31 @@ send_response(http_status_code_t status,
         // I prefer the visual blocking of braces-everywhere
         case HTTP_200_OK: {
             send(respondingSocket, "HTTP/1.1 200 OK\r\nConnection: close\r\n", 40, 0);
-            send(respondingSocket, "Server: Stampede/0.1\r\n", 24, 0);
-            send(respondingSocket, "Content-Length: resourceLength\r\n", 34, 0);
+            // send(respondingSocket, "Server: Stampede/0.1\r\n", 24, 0);
+
+            char numericalLength[100];
+            sprintf(numericalLength, "Content-Length: %d\r\n", (int)resourceLength);
+            int numBytes = strlen(numericalLength);
+            send(respondingSocket, numericalLength, numBytes, 0);
+
             switch (type) {
                 case CONTENT_GIF: {
                     send(respondingSocket, "Content-Type: image/gif\r\n", 23, 0);
+                    break;
                 }
                 case CONTENT_HTML: {
                     send(respondingSocket, "Content-Type: text/html\r\n", 27, 0);
+                    break;
                 }
                 case CONTENT_JPEG: {
                     send(respondingSocket, "Content-Type: text/jpeg\r\n", 27, 0);
+                    break;
                 }
                 case CONTENT_TEXT: {
+                    send(respondingSocket, "Content-Type: text/plain\r\n", 28, 0);
+                    break;
+                }
+                default: {
                     send(respondingSocket, "Content-Type: text/plain\r\n", 28, 0);
                 }
             }

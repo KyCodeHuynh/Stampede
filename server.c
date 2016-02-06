@@ -27,11 +27,11 @@ const off_t HTTP_200_OK_RESPONSE_LENGTH = 46;
 
 // '\n' are for if anyone wants to view the HTML source 
 const char HTTP_404_NOT_FOUND_RESPONSE[]
-= "HTTP/1.1 404 Not Found\r\nConnection: Close\r\nServer: Stampede/0.1\r\n\r\n<html>\n<head><title>Page Not Found</title></head>\n<body>This is not the page you are looking for.</body>\n</html>";
+= "HTTP/1.1 404 Not Found\r\nConnection: Close\r\nServer: Stampede/0.1\r\n\r\n<html>\n<head><title>Page Not Found</title></head>\n<body>This is not the page you are looking for.</body></html>";
 const off_t HTTP_404_NOT_FOUND_RESPONSE_LENGTH = 191;
 
 const char HTTP_500_SERVER_ERROR_RESPONSE[]
-= "HTTP/1.1 500 Server Error\r\nConnection: Close\r\nServer: Stampede/0.1\r\n\r\n<html>\n<head><title>Server Error</title></head>\n<body>We're sorry, something has gone wrong.</body>\n</html>";
+= "HTTP/1.1 500 Server Error\r\nConnection: Close\r\nServer: Stampede/0.1\r\n\r\n<html>\n<head><title>Server Error</title></head>\n<body>We're sorry, something has gone wrong.</body></html>";
 const off_t HTTP_500_SERVER_ERROR_RESPONSE_LENGTH = 189;
 
 int main(int argc, char *argv[])
@@ -54,8 +54,9 @@ int main(int argc, char *argv[])
 
     // Sanity checks on port number
     uint16_t portNum = atoi(argv[1]);
+    fprintf(stderr, "Port number: %d [Line: %d]\n", portNum, __LINE__);
 
-    if (portNum < 0 || portNum < UINT16_MAX ) {
+    if (portNum < 0 || UINT16_MAX < portNum) {
         error("ERROR: invalid port number (allowable range is 0-65535)");
     }
 
@@ -82,6 +83,9 @@ int main(int argc, char *argv[])
     // Expand buffer size as needed. 
     char requestBuffer[REQUEST_BUFFER_SIZE];
     memset(requestBuffer, 0, REQUEST_BUFFER_SIZE); 
+    http_verb_t verb;
+    char* resourcePath = NULL;
+    content_type_t type;
 
     // recv() returns the number of bytes actually read in
     // -1 on error, and 0 upon closed connection (which we
@@ -101,14 +105,14 @@ int main(int argc, char *argv[])
         printf("Client request:\n %s\n", requestBuffer);
 
         // Respond to client with requested resource
-        // TODO: Call parse_request(). Pass &resourcePath
-        // TODO: Call handle_request().
+        parse_request(requestBuffer, &verb, &resourcePath, &type);
+        handle_request(verb, resourcePath, type, respondingSocketFD);
     }
 
-    int n = write(respondingSocketFD, "I got your message", 18);
-    if (n < 0) {
-        error("ERROR: writing to socket");
-    }
+    // int n = write(respondingSocketFD, "I got your message", 18);
+    // if (n < 0) {
+    //     error("ERROR: writing to socket");
+    // }
 
     close(listeningSocketFD);
 
